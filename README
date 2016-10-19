@@ -1,0 +1,56 @@
+---------------------------------------------------------------
+---------------------------------------------------------------
+---------------------------------------------------------------
+------------------------ CURIOUS README -----------------------
+---------------------------------------------------------------
+--- Version: 0.1a 
+---------------------------------------------------------------
+---------------------------------------------------------------
+---------------------------------------------------------------
+--- 1. Archive Contents 
+
+The archive contains this readme file, a 'src' directory containing the
+Java source files, a 'libs' directory containing binary libraries used, and
+a 'scripts' directory containing useful scripts.
+
+--- 2. Install / Setup
+
+The code can be compiled in two ways. The first option is to import it into an
+IDE (e.g., Eclipse), download the Amazon AWS Java SDK, and use the IDE to compile and run it.
+The other option is to used the compile script in the 'scripts' directory, in which case,
+the 'libs' directory of the archive should be used (and placed in the same directory as the 'src' directory).
+(It may be possible to use Maven instead to resolve dependencies and compile the code.)
+
+The main class to run is called 'CloudExperiments'. The code assumes that the working directory when run
+contains the following directories: 'log', 'temp', 'state', and 'local'. If the code is ran using the run script
+provided in the 'scripts' directory, the required directories will automatically be created.
+ 
+In order to run with Amazon S3 as a storage backend, a credentials file must be provided at the root of the working
+directory. This file should be a text file named 'credentials.file'. The first line of the file needs to contain the
+AWS access key id, while the second should contain the secret access key. (See https://aws.amazon.com/developers/access-keys/.) 
+The third (and last line) of the file should contain a unique bucket name in which logs can be stored. (If the bucket does not exist, it will be automatically created.) Usage of a bucket to store logs and other options associated with the use of Amazon S3 can be easily changed by editing 'AmazonS3Utils.java',
+which can be found in the 'utils' sub-package. 
+
+--- 3. Running
+
+The CloudExperiments class provides a simple way to run a sequence of requests (or replay a trace) through a specified client with a specified storage backend. It can also be used for testing the implementation of a new client or storage interface. 
+Note that running 'CloudExperiments' without command-line arguments or with invalid arguments will print out a usage message.
+
+CloudExperiments can be run in two ways, either creating a new session, or resuming a previously saved session. Roughly speaking, a session
+can be thought of as a run (or replay) of a request sequence on a particular client (i.e., ORAM scheme) with a particular storage backend (e.g., Amazon S3). Resuming a session allows the run (or replay) to continue from where it previously ended using the same client and storage specified when creating the session.
+
+The usage template for a new session is: 'CloudExperiments [<optional ... Args>] <numReqsToRun> <client> <storage>'.
+The usage template to resume a session is: 'CloudExperiments --resume [<optional ... Args>] <numReqsToRun>'. Here, '<numReqsToRun>' is the non-negative integer number of request to run for (e.g., '100'), '<client>' is the description of the client to use (e.g., 'PathORAM'), and '<storage>' is the description of the storage to use (e.g., 'S3'). Supported clients and storages are specified in 'SchemeFactory.java' in the 'construction' sub-package. (This is also the file that should be edited to add new clients or storages.)
+
+Examples:
+-- 'CloudExperiments --max-blocks=1024 --block-byte-size=4096 --fast-init 1000 PathORAM SyncLocal', creates a new session using PathORAM as client, and SyncLocal (local file system, synchronous IO) and runs 1000 random requests, with a block size of 4KB and an ORAM capacity of 1024 blocks (i.e., 4MB). '--fast-init' is required for proper initialization of some clients.
+-- 'CloudExperiments --max-blocks=1024 --block-byte-size=4096 --fast-init 1000 PathORAM AsyncS3', runs on Amazon S3 instead (using asynchronous storage accesses). (Note that it is recommended to try running experiments locally (i.e., using SyncLocal, or AsyncLocal) before using Amazon S3. This is because of the monetary cost of using Amazon S3, and the fact that debugging an new client's implementation locally is usually easier.)
+-- 'CloudExperiments --resume 100', resumes the previous session and runs the next 100 requests.
+
+Results of experiments are automatically written to file. Each session's performance results are written to a log file in the 'log' directory. The name of the log file includes the unique session hash. Additionally, the file 'summary.perf' summarizes the performance of each experiment using a csv format (one row per experiment).
+
+Refer to 'CloudExperiments.java' for details about the available optional arguments.
+
+---------------------------------------------------------------
+---------------------------------------------------------------
+---------------------------------------------------------------
